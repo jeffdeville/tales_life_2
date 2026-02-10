@@ -223,5 +223,89 @@ defmodule TalesLife2Web.InterviewLiveTest do
       assert {:redirect, %{to: path}} = redirect
       assert path =~ "/users/log-in"
     end
+
+    test "shows record button", %{conn: conn, interview: interview} do
+      {:ok, view, _html} = live(conn, ~p"/interviews/#{interview}")
+      assert has_element?(view, "#record-button")
+      assert has_element?(view, "#record-button[aria-label='Start voice recording']")
+    end
+
+    test "handles audio_recorded event and transcribes", %{conn: conn, interview: interview} do
+      {:ok, view, _html} = live(conn, ~p"/interviews/#{interview}")
+
+      # Simulate audio being recorded - send base64-encoded audio
+      audio_base64 = Base.encode64("test audio data")
+      render_hook(view, "audio_recorded", %{"audio" => audio_base64})
+
+      # Allow async task to complete and be processed
+      Process.sleep(50)
+      html = render(view)
+      assert html =~ "This is a test transcription with some filler words."
+    end
+
+    test "transcribed text is saved as response", %{conn: conn, interview: interview} do
+      {:ok, view, _html} = live(conn, ~p"/interviews/#{interview}")
+
+      audio_base64 = Base.encode64("test audio data")
+      render_hook(view, "audio_recorded", %{"audio" => audio_base64})
+
+      Process.sleep(50)
+      html = render(view)
+      assert html =~ "1 of 3 answered"
+    end
+
+    test "transcription appends to existing text", %{conn: conn, interview: interview} do
+      {:ok, view, _html} = live(conn, ~p"/interviews/#{interview}")
+
+      # First save some text via form submit so it persists in responses_map
+      view
+      |> form("#response-form", response: %{text_content: "I remember"})
+      |> render_change()
+
+      # Then record audio
+      audio_base64 = Base.encode64("test audio data")
+      render_hook(view, "audio_recorded", %{"audio" => audio_base64})
+
+      Process.sleep(50)
+      html = render(view)
+      assert html =~ "I remember This is a test transcription with some filler words."
+    end
+
+    test "handles transcription error", %{conn: conn, interview: interview} do
+      {:ok, view, _html} = live(conn, ~p"/interviews/#{interview}")
+
+      # TestProvider returns error when audio starts with "error"
+      audio_base64 = Base.encode64("error_audio")
+      render_hook(view, "audio_recorded", %{"audio" => audio_base64})
+
+      Process.sleep(50)
+      html = render(view)
+      assert html =~ "Transcription failed"
+    end
+
+    test "handles invalid base64 audio", %{conn: conn, interview: interview} do
+      {:ok, view, _html} = live(conn, ~p"/interviews/#{interview}")
+
+      render_hook(view, "audio_recorded", %{"audio" => "not-valid-base64!!!"})
+
+      Process.sleep(50)
+      html = render(view)
+      assert html =~ "Invalid audio data"
+    end
+
+    test "handles recording_started event", %{conn: conn, interview: interview} do
+      {:ok, view, _html} = live(conn, ~p"/interviews/#{interview}")
+
+      html = render_hook(view, "recording_started", %{})
+      assert html =~ "Stop"
+      assert has_element?(view, "#record-button[aria-label='Stop voice recording']")
+    end
+
+    test "handles audio_error event", %{conn: conn, interview: interview} do
+      {:ok, view, _html} = live(conn, ~p"/interviews/#{interview}")
+
+      html = render_hook(view, "audio_error", %{"error" => "Microphone permission denied"})
+      assert html =~ "Microphone permission denied"
+    end
   end
 end
