@@ -109,6 +109,18 @@ defmodule TalesLife2.Interviews do
     |> Repo.all()
   end
 
+  @doc """
+  Lists all interviews for the given scope's user with response counts preloaded.
+  """
+  def list_interviews_with_progress(%Scope{user: user}) do
+    interviews = list_interviews_for_user(%Scope{user: user})
+
+    Enum.map(interviews, fn interview ->
+      progress = get_interview_progress(interview)
+      {interview, progress}
+    end)
+  end
+
   defp questions_for_interview_query(%Interview{selected_eras: eras}) do
     alias TalesLife2.Content.Question
 
