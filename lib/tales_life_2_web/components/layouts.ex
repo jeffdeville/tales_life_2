@@ -35,8 +35,85 @@ defmodule TalesLife2Web.Layouts do
 
   def app(assigns) do
     ~H"""
+    <header class="w-full border-b border-base-content/10" id="app-header">
+      <nav
+        class="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8"
+        id="app-nav"
+      >
+        <.link navigate={~p"/"} class="flex items-center gap-2" id="nav-logo">
+          <span class="text-2xl" aria-hidden="true">&#x1f4d6;</span>
+          <span class="text-lg font-semibold" style="font-family: var(--tl-font-serif);">
+            TalesLife
+          </span>
+        </.link>
+
+        <div class="flex items-center gap-1 sm:gap-3 text-sm">
+          <%= if @current_scope do %>
+            <.link
+              navigate={~p"/stories"}
+              class="rounded-lg px-3 py-2 font-medium transition-colors hover:bg-base-content/5"
+              id="nav-stories"
+            >
+              My Stories
+            </.link>
+            <.link
+              navigate={~p"/questions"}
+              class="rounded-lg px-3 py-2 font-medium transition-colors hover:bg-base-content/5"
+              id="nav-questions"
+            >
+              Questions
+            </.link>
+            <.link
+              navigate={~p"/interviews/new"}
+              class="rounded-lg px-3 py-2 font-medium transition-colors hover:bg-base-content/5"
+              id="nav-new-interview"
+            >
+              New Interview
+            </.link>
+
+            <div class="hidden sm:block px-2 text-base-content/50">
+              {@current_scope.user.email}
+            </div>
+
+            <.link
+              href={~p"/users/settings"}
+              class="rounded-lg px-3 py-2 transition-colors hover:bg-base-content/5"
+              id="nav-settings"
+            >
+              <.icon name="hero-cog-6-tooth-mini" class="size-5" />
+            </.link>
+            <.link
+              href={~p"/users/log-out"}
+              method="delete"
+              class="rounded-lg px-3 py-2 text-base-content/70 transition-colors hover:bg-base-content/5"
+              id="nav-logout"
+            >
+              Log out
+            </.link>
+          <% else %>
+            <.link
+              href={~p"/users/register"}
+              class="rounded-lg px-3 py-2 font-medium transition-colors hover:bg-base-content/5"
+              id="nav-register"
+            >
+              Register
+            </.link>
+            <.link
+              href={~p"/users/log-in"}
+              class="rounded-lg bg-primary px-4 py-2 font-medium text-primary-content transition-opacity hover:opacity-90"
+              id="nav-login"
+            >
+              Log in
+            </.link>
+          <% end %>
+
+          <.theme_toggle />
+        </div>
+      </nav>
+    </header>
+
     <main class="px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
-      <div class="mx-auto max-w-3xl space-y-4">
+      <div class="mx-auto max-w-3xl">
         {render_slot(@inner_block)}
       </div>
     </main>
@@ -95,11 +172,14 @@ defmodule TalesLife2Web.Layouts do
   """
   def theme_toggle(assigns) do
     ~H"""
-    <div class="card relative flex flex-row items-center border-2 border-base-300 bg-base-300 rounded-full">
-      <div class="absolute w-1/3 h-full rounded-full border-1 border-base-200 bg-base-100 brightness-200 left-0 [[data-theme=light]_&]:left-1/3 [[data-theme=dark]_&]:left-2/3 transition-[left]" />
+    <div
+      class="relative flex items-center rounded-full border border-base-content/15 bg-base-content/5"
+      id="theme-toggle"
+    >
+      <div class="absolute h-full w-1/3 rounded-full bg-base-content/10 left-0 [[data-theme=light]_&]:left-1/3 [[data-theme=dark]_&]:left-2/3 transition-[left]" />
 
       <button
-        class="flex p-2 cursor-pointer w-1/3"
+        class="flex cursor-pointer p-2 w-1/3"
         phx-click={JS.dispatch("phx:set-theme")}
         data-phx-theme="system"
       >
@@ -107,7 +187,7 @@ defmodule TalesLife2Web.Layouts do
       </button>
 
       <button
-        class="flex p-2 cursor-pointer w-1/3"
+        class="flex cursor-pointer p-2 w-1/3"
         phx-click={JS.dispatch("phx:set-theme")}
         data-phx-theme="light"
       >
@@ -115,7 +195,7 @@ defmodule TalesLife2Web.Layouts do
       </button>
 
       <button
-        class="flex p-2 cursor-pointer w-1/3"
+        class="flex cursor-pointer p-2 w-1/3"
         phx-click={JS.dispatch("phx:set-theme")}
         data-phx-theme="dark"
       >
