@@ -60,10 +60,10 @@ defmodule TalesLife2Web.StoryLibraryLive do
     <Layouts.app flash={@flash} current_scope={@current_scope}>
       <div class="max-w-2xl mx-auto" id="story-library">
         <div class="flex items-center justify-between mb-8">
-          <h1 class="text-3xl font-bold">My Stories</h1>
+          <h1 class="text-3xl font-bold" style="font-family: var(--tl-font-serif);">My Stories</h1>
           <.link
             navigate={~p"/interviews/new"}
-            class="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-content rounded-lg font-medium hover:opacity-90 transition-opacity"
+            class="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-content rounded-lg font-medium hover:opacity-90 transition-opacity"
           >
             <.icon name="hero-plus" class="size-5" /> New Interview
           </.link>
@@ -96,8 +96,13 @@ defmodule TalesLife2Web.StoryLibraryLive do
         <%= if @interviews == [] do %>
           <div class="text-center py-16" id="empty-state">
             <.icon name="hero-book-open" class="size-16 text-base-content/20 mx-auto mb-4" />
-            <h2 class="text-xl font-semibold mb-2 text-base-content/70">No stories yet</h2>
-            <p class="text-base-content/50 mb-6 max-w-md mx-auto">
+            <h2
+              class="text-xl font-semibold mb-2 text-base-content/70"
+              style="font-family: var(--tl-font-serif);"
+            >
+              No stories yet
+            </h2>
+            <p class="text-base-content/50 mb-6 max-w-md mx-auto leading-relaxed">
               Every family has stories worth preserving. Start an interview to capture the memories and wisdom of someone you love.
             </p>
             <.link
@@ -112,7 +117,7 @@ defmodule TalesLife2Web.StoryLibraryLive do
             <.link
               :for={{interview, progress} <- @interviews}
               navigate={~p"/stories/#{interview}"}
-              class="block p-5 rounded-xl border border-base-300 hover:border-primary/30 hover:shadow-md transition-all"
+              class="block p-5 rounded-xl border border-base-300/60 bg-base-100 hover:border-primary/30 hover:shadow-md transition-all tl-card"
               id={"interview-#{interview.id}"}
             >
               <div class="flex items-start justify-between mb-3">
