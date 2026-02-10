@@ -45,6 +45,16 @@ defmodule TalesLife2Web.Router do
     end
   end
 
+  ## Public shared story route (no auth required)
+
+  scope "/", TalesLife2Web do
+    pipe_through [:browser]
+
+    live_session :public do
+      live "/shared/:token", SharedStoryLive
+    end
+  end
+
   ## Authenticated LiveView routes
 
   scope "/", TalesLife2Web do

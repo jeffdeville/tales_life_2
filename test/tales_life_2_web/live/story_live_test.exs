@@ -190,5 +190,34 @@ defmodule TalesLife2Web.StoryLiveTest do
       assert has_element?(view, "#story-header")
       assert html =~ "In Progress"
     end
+
+    test "generates share link for completed interview", %{conn: conn, interview: interview} do
+      {:ok, _interview} = TalesLife2.Interviews.complete_interview(interview)
+
+      {:ok, view, _html} = live(conn, ~p"/stories/#{interview}")
+      assert has_element?(view, "#btn-share")
+
+      html =
+        view
+        |> element("#btn-share")
+        |> render_click()
+
+      assert html =~ "Share this story"
+      assert has_element?(view, "#share-modal")
+      assert has_element?(view, "#share-url-input")
+      assert has_element?(view, "#btn-copy-link")
+    end
+
+    test "closes share modal", %{conn: conn, interview: interview} do
+      {:ok, _interview} = TalesLife2.Interviews.complete_interview(interview)
+
+      {:ok, view, _html} = live(conn, ~p"/stories/#{interview}")
+
+      view |> element("#btn-share") |> render_click()
+      assert has_element?(view, "#share-modal")
+
+      view |> element("#btn-close-share") |> render_click()
+      refute has_element?(view, "#share-modal")
+    end
   end
 end
