@@ -223,5 +223,85 @@ defmodule TalesLife2Web.InterviewLiveTest do
       assert {:redirect, %{to: path}} = redirect
       assert path =~ "/users/log-in"
     end
+
+    test "shows record button", %{conn: conn, interview: interview} do
+      {:ok, view, _html} = live(conn, ~p"/interviews/#{interview}")
+      assert has_element?(view, "#record-btn")
+      assert has_element?(view, "#record-btn[aria-label='Start voice recording']")
+    end
+
+    test "toggle_recording updates recording state", %{conn: conn, interview: interview} do
+      {:ok, view, _html} = live(conn, ~p"/interviews/#{interview}")
+
+      html = view |> element("#record-btn") |> render_click()
+      assert html =~ "Stop voice recording"
+    end
+
+    test "audio_recorded event triggers transcription and updates textarea", %{
+      conn: conn,
+      interview: interview
+    } do
+      {:ok, view, _html} = live(conn, ~p"/interviews/#{interview}")
+
+      audio_base64 = Base.encode64("some audio data")
+      render_click(view, "audio_recorded", %{"audio" => audio_base64})
+
+      # Wait for async task to complete
+      # The TestProvider returns a predictable transcript
+      assert_push_event(view, "transcription_result", %{text: text})
+      assert text =~ "test transcription"
+    end
+
+    test "audio_recorded appends to existing text", %{conn: conn, interview: interview} do
+      {:ok, view, _html} = live(conn, ~p"/interviews/#{interview}")
+
+      # First, type some text
+      view
+      |> form("#response-form", response: %{text_content: "Existing text."})
+      |> render_change()
+
+      audio_base64 = Base.encode64("some audio data")
+      render_click(view, "audio_recorded", %{"audio" => audio_base64})
+
+      assert_push_event(view, "transcription_result", %{text: text})
+      assert text =~ "Existing text."
+      assert text =~ "test transcription"
+    end
+
+    test "audio_recorded handles transcription error", %{conn: conn, interview: interview} do
+      {:ok, view, _html} = live(conn, ~p"/interviews/#{interview}")
+
+      # TestProvider returns error for audio starting with "error"
+      audio_base64 = Base.encode64("error_audio")
+      render_click(view, "audio_recorded", %{"audio" => audio_base64})
+
+      assert_push_event(view, "transcription_error", %{error: _})
+      assert render(view) =~ "Transcription failed"
+    end
+
+    test "audio_error event shows flash error", %{conn: conn, interview: interview} do
+      {:ok, view, _html} = live(conn, ~p"/interviews/#{interview}")
+
+      render_click(view, "audio_error", %{"error" => "Microphone permission denied"})
+
+      assert render(view) =~ "Microphone permission denied"
+    end
+
+    test "transcribed text is auto-saved", %{conn: conn, interview: interview} do
+      {:ok, view, _html} = live(conn, ~p"/interviews/#{interview}")
+
+      audio_base64 = Base.encode64("some audio data")
+      render_click(view, "audio_recorded", %{"audio" => audio_base64})
+
+      # Wait for transcription
+      assert_push_event(view, "transcription_result", %{text: _text})
+
+      # Trigger auto-save by sending the timer message
+      send(view.pid, :auto_save)
+
+      # Verify progress updated (response was saved)
+      html = render(view)
+      assert html =~ "1 of 3 answered"
+    end
   end
 end

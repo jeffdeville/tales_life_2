@@ -203,3 +203,13 @@ body {
     min-height: 44px;
   }
 }
+
+/* Voice recording pulse animation */
+.recording-pulse {
+  animation: pulse-recording 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-recording {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}

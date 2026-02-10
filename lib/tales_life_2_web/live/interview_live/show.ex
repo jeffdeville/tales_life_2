@@ -2,6 +2,7 @@ defmodule TalesLife2Web.InterviewLive.Show do
   use TalesLife2Web, :live_view
 
   alias TalesLife2.Interviews
+  alias TalesLife2.Transcription
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
@@ -27,6 +28,7 @@ defmodule TalesLife2Web.InterviewLive.Show do
         |> assign(:current_index, 0)
         |> assign(:progress, progress)
         |> assign(:auto_save_timer, nil)
+        |> assign(:recording_state, :idle)
         |> assign_current_question_form(questions, responses_map, 0)
 
       {:ok, socket}
@@ -71,6 +73,40 @@ defmodule TalesLife2Web.InterviewLive.Show do
     {:noreply, assign(socket, :auto_save_timer, nil)}
   end
 
+  def handle_event("toggle_recording", _params, socket) do
+    new_state =
+      case socket.assigns.recording_state do
+        :idle -> :recording
+        :recording -> :idle
+        :transcribing -> :transcribing
+      end
+
+    {:noreply, assign(socket, :recording_state, new_state)}
+  end
+
+  def handle_event("audio_recorded", %{"audio" => base64_audio}, socket) do
+    socket = assign(socket, :recording_state, :transcribing)
+
+    task =
+      Task.async(fn ->
+        case Base.decode64(base64_audio) do
+          {:ok, audio_binary} -> Transcription.transcribe(audio_binary)
+          :error -> {:error, "Invalid audio data"}
+        end
+      end)
+
+    {:noreply, assign(socket, :transcription_task, task)}
+  end
+
+  def handle_event("audio_error", %{"error" => message}, socket) do
+    socket =
+      socket
+      |> assign(:recording_state, :idle)
+      |> put_flash(:error, message)
+
+    {:noreply, socket}
+  end
+
   def handle_event("complete_interview", _params, socket) do
     socket = maybe_save_current_response(socket)
 
@@ -92,6 +128,52 @@ defmodule TalesLife2Web.InterviewLive.Show do
     text = Map.get(socket.assigns.responses_map, question.id, "")
     socket = if text != "", do: save_response(socket, text), else: socket
     {:noreply, assign(socket, :auto_save_timer, nil)}
+  end
+
+  def handle_info({ref, result}, socket) when is_reference(ref) do
+    Process.demonitor(ref, [:flush])
+
+    socket =
+      case result do
+        {:ok, text} ->
+          question = current_question(socket)
+          existing = Map.get(socket.assigns.responses_map, question.id, "")
+
+          new_text =
+            if existing == "" do
+              text
+            else
+              existing <> " " <> text
+            end
+
+          socket
+          |> assign(:recording_state, :idle)
+          |> update_local_response(question.id, new_text)
+          |> assign_current_question_form(
+            socket.assigns.questions,
+            Map.put(socket.assigns.responses_map, question.id, new_text),
+            socket.assigns.current_index
+          )
+          |> push_event("transcription_result", %{text: new_text})
+          |> schedule_auto_save()
+
+        {:error, reason} ->
+          socket
+          |> assign(:recording_state, :idle)
+          |> push_event("transcription_error", %{error: reason})
+          |> put_flash(:error, "Transcription failed: #{reason}")
+      end
+
+    {:noreply, socket}
+  end
+
+  def handle_info({:DOWN, _ref, :process, _pid, _reason}, socket) do
+    socket =
+      socket
+      |> assign(:recording_state, :idle)
+      |> put_flash(:error, "Transcription failed unexpectedly.")
+
+    {:noreply, socket}
   end
 
   defp save_response(socket, text) do
@@ -179,6 +261,14 @@ defmodule TalesLife2Web.InterviewLive.Show do
         assign(socket, :response_form, form)
     end
   end
+
+  defp recording_btn_class(:idle), do: "btn-ghost text-secondary hover:bg-secondary/10"
+  defp recording_btn_class(:recording), do: "btn-error text-error-content"
+  defp recording_btn_class(:transcribing), do: "btn-ghost text-base-content/40 btn-disabled"
+
+  defp recording_aria_label(:idle), do: "Start voice recording"
+  defp recording_aria_label(:recording), do: "Stop voice recording"
+  defp recording_aria_label(:transcribing), do: "Transcribing audio, please wait"
 
   defp era_label("early_life"), do: "Early Life"
   defp era_label("mid_life"), do: "Mid Life"
@@ -279,9 +369,34 @@ defmodule TalesLife2Web.InterviewLive.Show do
                 phx-debounce="500"
               />
 
-              <p class="text-xs text-base-content/40 mt-1">
-                Responses are saved automatically as you type.
-              </p>
+              <div class="flex items-center justify-between mt-2">
+                <p class="text-xs text-base-content/40">
+                  Responses are saved automatically as you type.
+                </p>
+
+                <button
+                  id="record-btn"
+                  type="button"
+                  phx-hook="AudioRecorder"
+                  phx-click="toggle_recording"
+                  disabled={@recording_state == :transcribing}
+                  aria-label={recording_aria_label(@recording_state)}
+                  class={[
+                    "btn btn-circle btn-lg transition-all duration-200",
+                    recording_btn_class(@recording_state)
+                  ]}
+                >
+                  <span :if={@recording_state == :idle}>
+                    <.icon name="hero-microphone" class="size-6" />
+                  </span>
+                  <span :if={@recording_state == :recording} class="recording-pulse">
+                    <.icon name="hero-stop-circle" class="size-6" />
+                  </span>
+                  <span :if={@recording_state == :transcribing} class="animate-spin">
+                    <.icon name="hero-arrow-path" class="size-6" />
+                  </span>
+                </button>
+              </div>
             </.form>
 
             <%!-- Navigation --%>
