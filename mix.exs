@@ -90,7 +90,7 @@ defmodule TalesLife2.MixProject do
         "esbuild tales_life_2 --minify",
         "phx.digest"
       ],
-      precommit: ["compile --warning-as-errors", "deps.unlock --unused", "format", "test"]
+      precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format", "test"]
     ]
   end
 end

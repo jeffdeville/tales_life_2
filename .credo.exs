@@ -59,7 +59,7 @@
           {Credo.Check.Refactor.CyclomaticComplexity, []},
           {Credo.Check.Refactor.FunctionArity, []},
           {Credo.Check.Refactor.LongQuoteBlocks, []},
-          {Credo.Check.Refactor.Nesting, []},
+          {Credo.Check.Refactor.Nesting, [max_nesting: 3]},
           {Credo.Check.Refactor.UnlessWithElse, []},
           {Credo.Check.Refactor.WithClauses, []},
 
