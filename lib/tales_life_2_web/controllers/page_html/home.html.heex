@@ -1,8 +1,6 @@
-<Layouts.flash_group flash={@flash} />
-
-<main class="px-4 sm:px-6 lg:px-8">
+<Layouts.app flash={@flash} current_scope={@current_scope}>
   <%!-- Hero section --%>
-  <div class="max-w-3xl mx-auto text-center py-16 sm:py-24" id="hero">
+  <div class="text-center py-8 sm:py-16" id="hero">
     <p class="text-5xl mb-6" aria-hidden="true">&#x1f4d6;</p>
     <h1
       class="text-4xl sm:text-5xl font-bold tracking-tight leading-tight mb-6"
@@ -34,8 +32,8 @@
   </div>
 
   <%!-- Features section --%>
-  <div class="max-w-4xl mx-auto pb-20" id="features">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+  <div class="pb-16" id="features">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
       <div class="text-center p-6 rounded-xl bg-base-200/50" id="feature-guided">
         <div class="text-3xl mb-3" aria-hidden="true">&#x1f4ac;</div>
         <h3 class="text-lg font-semibold mb-2" style="font-family: var(--tl-font-serif);">
@@ -67,7 +65,10 @@
   </div>
 
   <%!-- Warm quote --%>
-  <div class="max-w-2xl mx-auto text-center pb-20 border-t border-base-300/50 pt-12" id="quote">
+  <div
+    class="max-w-2xl mx-auto text-center pb-16 border-t border-base-content/10 pt-12"
+    id="quote"
+  >
     <blockquote
       class="italic text-xl text-base-content/70 leading-relaxed"
       style="font-family: var(--tl-font-serif);"
@@ -75,4 +76,4 @@
       &ldquo;The stories we share become the legacy we leave behind.&rdquo;
     </blockquote>
   </div>
-</main>
+</Layouts.app>
