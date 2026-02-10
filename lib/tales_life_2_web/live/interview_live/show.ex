@@ -2,6 +2,7 @@ defmodule TalesLife2Web.InterviewLive.Show do
   use TalesLife2Web, :live_view
 
   alias TalesLife2.Interviews
+  alias TalesLife2.Transcription
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
@@ -27,6 +28,7 @@ defmodule TalesLife2Web.InterviewLive.Show do
         |> assign(:current_index, 0)
         |> assign(:progress, progress)
         |> assign(:auto_save_timer, nil)
+        |> assign(:recording_state, :idle)
         |> assign_current_question_form(questions, responses_map, 0)
 
       {:ok, socket}
@@ -71,6 +73,31 @@ defmodule TalesLife2Web.InterviewLive.Show do
     {:noreply, assign(socket, :auto_save_timer, nil)}
   end
 
+  def handle_event("recording_started", _params, socket) do
+    {:noreply, assign(socket, :recording_state, :recording)}
+  end
+
+  def handle_event("audio_recorded", %{"audio" => base64_audio}, socket) do
+    socket = assign(socket, :recording_state, :transcribing)
+
+    task =
+      Task.async(fn ->
+        case Base.decode64(base64_audio) do
+          {:ok, audio_binary} -> Transcription.transcribe(audio_binary)
+          :error -> {:error, :invalid_audio}
+        end
+      end)
+
+    {:noreply, assign(socket, :transcription_task, task)}
+  end
+
+  def handle_event("audio_error", %{"error" => error}, socket) do
+    {:noreply,
+     socket
+     |> assign(:recording_state, :idle)
+     |> put_flash(:error, error)}
+  end
+
   def handle_event("complete_interview", _params, socket) do
     socket = maybe_save_current_response(socket)
 
@@ -92,6 +119,56 @@ defmodule TalesLife2Web.InterviewLive.Show do
     text = Map.get(socket.assigns.responses_map, question.id, "")
     socket = if text != "", do: save_response(socket, text), else: socket
     {:noreply, assign(socket, :auto_save_timer, nil)}
+  end
+
+  def handle_info({ref, result}, socket) when is_reference(ref) do
+    Process.demonitor(ref, [:flush])
+
+    case result do
+      {:ok, text} ->
+        question = current_question(socket)
+        existing = Map.get(socket.assigns.responses_map, question.id, "")
+
+        new_text =
+          if existing == "",
+            do: text,
+            else: existing <> " " <> text
+
+        socket =
+          socket
+          |> assign(:recording_state, :idle)
+          |> update_local_response(question.id, new_text)
+          |> assign_current_question_form(
+            socket.assigns.questions,
+            Map.put(socket.assigns.responses_map, question.id, new_text),
+            socket.assigns.current_index
+          )
+          |> push_event("transcription_result", %{text: new_text})
+
+        socket = save_response(socket, new_text)
+        {:noreply, socket}
+
+      {:error, reason} ->
+        message =
+          case reason do
+            :invalid_audio -> "Invalid audio data"
+            :test_error -> "Transcription failed"
+            _ -> "Transcription failed. Please try again."
+          end
+
+        {:noreply,
+         socket
+         |> assign(:recording_state, :idle)
+         |> push_event("transcription_error", %{error: message})
+         |> put_flash(:error, message)}
+    end
+  end
+
+  def handle_info({:DOWN, _ref, :process, _pid, _reason}, socket) do
+    {:noreply,
+     socket
+     |> assign(:recording_state, :idle)
+     |> put_flash(:error, "Transcription failed unexpectedly.")}
   end
 
   defp save_response(socket, text) do
@@ -179,6 +256,19 @@ defmodule TalesLife2Web.InterviewLive.Show do
         assign(socket, :response_form, form)
     end
   end
+
+  defp recording_button_classes(:idle),
+    do: "bg-base-200 text-base-content/70 hover:bg-base-300"
+
+  defp recording_button_classes(:recording),
+    do: "bg-error/10 text-error border border-error/30"
+
+  defp recording_button_classes(:transcribing),
+    do: "bg-base-200 text-base-content/50 cursor-wait"
+
+  defp recording_aria_label(:idle), do: "Start voice recording"
+  defp recording_aria_label(:recording), do: "Stop voice recording"
+  defp recording_aria_label(:transcribing), do: "Transcription in progress"
 
   defp era_label("early_life"), do: "Early Life"
   defp era_label("mid_life"), do: "Mid Life"
@@ -279,9 +369,45 @@ defmodule TalesLife2Web.InterviewLive.Show do
                 phx-debounce="500"
               />
 
-              <p class="text-xs text-base-content/40 mt-1">
-                Responses are saved automatically as you type.
-              </p>
+              <div class="flex items-center justify-between mt-2">
+                <p class="text-xs text-base-content/40">
+                  Responses are saved automatically as you type.
+                </p>
+
+                <button
+                  type="button"
+                  id="record-button"
+                  phx-hook="AudioRecorder"
+                  aria-label={recording_aria_label(@recording_state)}
+                  disabled={@recording_state == :transcribing}
+                  class={[
+                    "tl-record-btn inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
+                    recording_button_classes(@recording_state)
+                  ]}
+                >
+                  <span
+                    :if={@recording_state == :idle}
+                    class="inline-flex items-center gap-2"
+                  >
+                    <.icon name="hero-microphone" class="size-5" />
+                    <span>Record</span>
+                  </span>
+                  <span
+                    :if={@recording_state == :recording}
+                    class="inline-flex items-center gap-2"
+                  >
+                    <span class="tl-recording-dot"></span>
+                    <span>Stop</span>
+                  </span>
+                  <span
+                    :if={@recording_state == :transcribing}
+                    class="inline-flex items-center gap-2"
+                  >
+                    <span class="tl-spinner"></span>
+                    <span>Transcribing…</span>
+                  </span>
+                </button>
+              </div>
             </.form>
 
             <%!-- Navigation --%>
