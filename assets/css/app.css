@@ -197,6 +197,41 @@ body {
   background: rgba(212, 165, 116, 0.5);
 }
 
+/* Voice recording button */
+.tl-record-btn {
+  min-height: 44px;
+}
+
+/* Pulsing red dot for active recording */
+.tl-recording-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: oklch(58% 0.2 20);
+  animation: tl-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes tl-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.3); }
+}
+
+/* Transcription loading spinner */
+.tl-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: tl-spin 0.75s linear infinite;
+}
+
+@keyframes tl-spin {
+  to { transform: rotate(360deg); }
+}
+
 /* Touch-friendly tap targets on touch devices */
 @media (pointer: coarse) {
   .btn, button, a[href] {
@@ -204,12 +239,3 @@ body {
   }
 }
 
-/* Voice recording pulse animation */
-.recording-pulse {
-  animation: pulse-recording 1.5s ease-in-out infinite;
-}
-
-@keyframes pulse-recording {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}

@@ -63,6 +63,7 @@ const AudioRecorder = {
         this.mediaRecorder.start()
         this.recording = true
         this.el.setAttribute("data-recording", "true")
+        this.pushEvent("recording_started", {})
       })
       .catch(error => {
         console.error("AudioRecorder: microphone access error", error)

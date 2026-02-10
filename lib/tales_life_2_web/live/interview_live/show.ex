@@ -73,15 +73,8 @@ defmodule TalesLife2Web.InterviewLive.Show do
     {:noreply, assign(socket, :auto_save_timer, nil)}
   end
 
-  def handle_event("toggle_recording", _params, socket) do
-    new_state =
-      case socket.assigns.recording_state do
-        :idle -> :recording
-        :recording -> :idle
-        :transcribing -> :transcribing
-      end
-
-    {:noreply, assign(socket, :recording_state, new_state)}
+  def handle_event("recording_started", _params, socket) do
+    {:noreply, assign(socket, :recording_state, :recording)}
   end
 
   def handle_event("audio_recorded", %{"audio" => base64_audio}, socket) do
@@ -91,20 +84,18 @@ defmodule TalesLife2Web.InterviewLive.Show do
       Task.async(fn ->
         case Base.decode64(base64_audio) do
           {:ok, audio_binary} -> Transcription.transcribe(audio_binary)
-          :error -> {:error, "Invalid audio data"}
+          :error -> {:error, :invalid_audio}
         end
       end)
 
     {:noreply, assign(socket, :transcription_task, task)}
   end
 
-  def handle_event("audio_error", %{"error" => message}, socket) do
-    socket =
-      socket
-      |> assign(:recording_state, :idle)
-      |> put_flash(:error, message)
-
-    {:noreply, socket}
+  def handle_event("audio_error", %{"error" => error}, socket) do
+    {:noreply,
+     socket
+     |> assign(:recording_state, :idle)
+     |> put_flash(:error, error)}
   end
 
   def handle_event("complete_interview", _params, socket) do
@@ -133,19 +124,17 @@ defmodule TalesLife2Web.InterviewLive.Show do
   def handle_info({ref, result}, socket) when is_reference(ref) do
     Process.demonitor(ref, [:flush])
 
-    socket =
-      case result do
-        {:ok, text} ->
-          question = current_question(socket)
-          existing = Map.get(socket.assigns.responses_map, question.id, "")
+    case result do
+      {:ok, text} ->
+        question = current_question(socket)
+        existing = Map.get(socket.assigns.responses_map, question.id, "")
 
-          new_text =
-            if existing == "" do
-              text
-            else
-              existing <> " " <> text
-            end
+        new_text =
+          if existing == "",
+            do: text,
+            else: existing <> " " <> text
 
+        socket =
           socket
           |> assign(:recording_state, :idle)
           |> update_local_response(question.id, new_text)
@@ -155,25 +144,31 @@ defmodule TalesLife2Web.InterviewLive.Show do
             socket.assigns.current_index
           )
           |> push_event("transcription_result", %{text: new_text})
-          |> schedule_auto_save()
 
-        {:error, reason} ->
-          socket
-          |> assign(:recording_state, :idle)
-          |> push_event("transcription_error", %{error: reason})
-          |> put_flash(:error, "Transcription failed: #{reason}")
-      end
+        socket = save_response(socket, new_text)
+        {:noreply, socket}
 
-    {:noreply, socket}
+      {:error, reason} ->
+        message =
+          case reason do
+            :invalid_audio -> "Invalid audio data"
+            :test_error -> "Transcription failed"
+            _ -> "Transcription failed. Please try again."
+          end
+
+        {:noreply,
+         socket
+         |> assign(:recording_state, :idle)
+         |> push_event("transcription_error", %{error: message})
+         |> put_flash(:error, message)}
+    end
   end
 
   def handle_info({:DOWN, _ref, :process, _pid, _reason}, socket) do
-    socket =
-      socket
-      |> assign(:recording_state, :idle)
-      |> put_flash(:error, "Transcription failed unexpectedly.")
-
-    {:noreply, socket}
+    {:noreply,
+     socket
+     |> assign(:recording_state, :idle)
+     |> put_flash(:error, "Transcription failed unexpectedly.")}
   end
 
   defp save_response(socket, text) do
@@ -262,13 +257,18 @@ defmodule TalesLife2Web.InterviewLive.Show do
     end
   end
 
-  defp recording_btn_class(:idle), do: "btn-ghost text-secondary hover:bg-secondary/10"
-  defp recording_btn_class(:recording), do: "btn-error text-error-content"
-  defp recording_btn_class(:transcribing), do: "btn-ghost text-base-content/40 btn-disabled"
+  defp recording_button_classes(:idle),
+    do: "bg-base-200 text-base-content/70 hover:bg-base-300"
+
+  defp recording_button_classes(:recording),
+    do: "bg-error/10 text-error border border-error/30"
+
+  defp recording_button_classes(:transcribing),
+    do: "bg-base-200 text-base-content/50 cursor-wait"
 
   defp recording_aria_label(:idle), do: "Start voice recording"
   defp recording_aria_label(:recording), do: "Stop voice recording"
-  defp recording_aria_label(:transcribing), do: "Transcribing audio, please wait"
+  defp recording_aria_label(:transcribing), do: "Transcription in progress"
 
   defp era_label("early_life"), do: "Early Life"
   defp era_label("mid_life"), do: "Mid Life"
@@ -375,25 +375,36 @@ defmodule TalesLife2Web.InterviewLive.Show do
                 </p>
 
                 <button
-                  id="record-btn"
                   type="button"
+                  id="record-button"
                   phx-hook="AudioRecorder"
-                  phx-click="toggle_recording"
-                  disabled={@recording_state == :transcribing}
                   aria-label={recording_aria_label(@recording_state)}
+                  disabled={@recording_state == :transcribing}
                   class={[
-                    "btn btn-circle btn-lg transition-all duration-200",
-                    recording_btn_class(@recording_state)
+                    "tl-record-btn inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
+                    recording_button_classes(@recording_state)
                   ]}
                 >
-                  <span :if={@recording_state == :idle}>
-                    <.icon name="hero-microphone" class="size-6" />
+                  <span
+                    :if={@recording_state == :idle}
+                    class="inline-flex items-center gap-2"
+                  >
+                    <.icon name="hero-microphone" class="size-5" />
+                    <span>Record</span>
                   </span>
-                  <span :if={@recording_state == :recording} class="recording-pulse">
-                    <.icon name="hero-stop-circle" class="size-6" />
+                  <span
+                    :if={@recording_state == :recording}
+                    class="inline-flex items-center gap-2"
+                  >
+                    <span class="tl-recording-dot"></span>
+                    <span>Stop</span>
                   </span>
-                  <span :if={@recording_state == :transcribing} class="animate-spin">
-                    <.icon name="hero-arrow-path" class="size-6" />
+                  <span
+                    :if={@recording_state == :transcribing}
+                    class="inline-flex items-center gap-2"
+                  >
+                    <span class="tl-spinner"></span>
+                    <span>Transcribing…</span>
                   </span>
                 </button>
               </div>
