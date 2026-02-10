@@ -29,6 +29,7 @@ defmodule TalesLife2Web.InterviewLive.Show do
         |> assign(:progress, progress)
         |> assign(:auto_save_timer, nil)
         |> assign(:recording_state, :idle)
+        |> assign(:transcription_error_message, nil)
         |> assign_current_question_form(questions, responses_map, 0)
 
       {:ok, socket}
@@ -45,6 +46,8 @@ defmodule TalesLife2Web.InterviewLive.Show do
     socket =
       socket
       |> assign(:current_index, new_index)
+      |> assign(:recording_state, :idle)
+      |> assign(:transcription_error_message, nil)
       |> assign_current_question_form(questions, responses_map, new_index)
 
     {:noreply, socket}
@@ -74,7 +77,10 @@ defmodule TalesLife2Web.InterviewLive.Show do
   end
 
   def handle_event("recording_started", _params, socket) do
-    {:noreply, assign(socket, :recording_state, :recording)}
+    {:noreply,
+     socket
+     |> assign(:recording_state, :recording)
+     |> assign(:transcription_error_message, nil)}
   end
 
   def handle_event("audio_recorded", %{"audio" => base64_audio}, socket) do
@@ -96,6 +102,13 @@ defmodule TalesLife2Web.InterviewLive.Show do
      socket
      |> assign(:recording_state, :idle)
      |> put_flash(:error, error)}
+  end
+
+  def handle_event("retry_recording", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:recording_state, :idle)
+     |> assign(:transcription_error_message, nil)}
   end
 
   def handle_event("complete_interview", _params, socket) do
@@ -137,6 +150,7 @@ defmodule TalesLife2Web.InterviewLive.Show do
         socket =
           socket
           |> assign(:recording_state, :idle)
+          |> assign(:transcription_error_message, nil)
           |> update_local_response(question.id, new_text)
           |> assign_current_question_form(
             socket.assigns.questions,
@@ -158,17 +172,17 @@ defmodule TalesLife2Web.InterviewLive.Show do
 
         {:noreply,
          socket
-         |> assign(:recording_state, :idle)
-         |> push_event("transcription_error", %{error: message})
-         |> put_flash(:error, message)}
+         |> assign(:recording_state, :transcription_error)
+         |> assign(:transcription_error_message, message)
+         |> push_event("transcription_error", %{error: message})}
     end
   end
 
   def handle_info({:DOWN, _ref, :process, _pid, _reason}, socket) do
     {:noreply,
      socket
-     |> assign(:recording_state, :idle)
-     |> put_flash(:error, "Transcription failed unexpectedly.")}
+     |> assign(:recording_state, :transcription_error)
+     |> assign(:transcription_error_message, "Transcription failed unexpectedly.")}
   end
 
   defp save_response(socket, text) do
@@ -257,18 +271,31 @@ defmodule TalesLife2Web.InterviewLive.Show do
     end
   end
 
-  defp recording_button_classes(:idle),
+  defp current_response_empty?(assigns) do
+    question = Enum.at(assigns.questions, assigns.current_index)
+    text = Map.get(assigns.responses_map, question.id, "")
+    String.trim(text) == ""
+  end
+
+  defp recording_button_classes(:idle, true),
+    do: "bg-primary/10 text-primary border-2 border-primary/40 hover:bg-primary/20 shadow-sm"
+
+  defp recording_button_classes(:idle, false),
     do: "bg-base-200 text-base-content/70 hover:bg-base-300"
 
-  defp recording_button_classes(:recording),
-    do: "bg-error/10 text-error border border-error/30"
+  defp recording_button_classes(:recording, _empty),
+    do: "bg-error/10 text-error border-2 border-error/30 shadow-sm"
 
-  defp recording_button_classes(:transcribing),
+  defp recording_button_classes(:transcribing, _empty),
     do: "bg-base-200 text-base-content/50 cursor-wait"
+
+  defp recording_button_classes(:transcription_error, _empty),
+    do: "bg-base-200 text-base-content/70 hover:bg-base-300"
 
   defp recording_aria_label(:idle), do: "Start voice recording"
   defp recording_aria_label(:recording), do: "Stop voice recording"
   defp recording_aria_label(:transcribing), do: "Transcription in progress"
+  defp recording_aria_label(:transcription_error), do: "Start voice recording"
 
   defp era_label("early_life"), do: "Early Life"
   defp era_label("mid_life"), do: "Mid Life"
@@ -287,6 +314,7 @@ defmodule TalesLife2Web.InterviewLive.Show do
       assigns
       |> assign(:question, Enum.at(assigns.questions, assigns.current_index))
       |> assign(:total, length(assigns.questions))
+      |> assign(:response_empty, current_response_empty?(assigns))
 
     ~H"""
     <Layouts.app flash={@flash} current_scope={@current_scope}>
@@ -353,6 +381,27 @@ defmodule TalesLife2Web.InterviewLive.Show do
               </p>
             </div>
 
+            <%!-- Voice-first recording area --%>
+            <div
+              :if={@response_empty && @recording_state == :idle}
+              class="mb-4 flex flex-col items-center gap-3 py-6 px-4 rounded-xl bg-primary/5 border border-primary/20"
+              id="voice-prompt"
+            >
+              <button
+                type="button"
+                id="voice-prompt-record-button"
+                phx-hook="AudioRecorder"
+                aria-label="Start voice recording"
+                class="tl-record-btn inline-flex items-center gap-3 px-6 py-3 rounded-xl text-base font-medium bg-primary/10 text-primary border-2 border-primary/40 hover:bg-primary/20 shadow-sm transition-all"
+              >
+                <.icon name="hero-microphone" class="size-6" />
+                <span>Tap to speak your answer</span>
+              </button>
+              <p class="text-sm text-base-content/50">
+                Or type your response below
+              </p>
+            </div>
+
             <%!-- Response area --%>
             <.form
               for={@response_form}
@@ -369,18 +418,22 @@ defmodule TalesLife2Web.InterviewLive.Show do
                 phx-debounce="500"
               />
 
+              <%!-- Recording controls --%>
               <div class="flex items-center justify-between mt-2" data-recording-container>
                 <p class="text-xs text-base-content/40">
                   Responses are saved automatically as you type.
                 </p>
 
                 <div class="inline-flex items-center gap-2">
+                  <%!-- Audio level indicator --%>
                   <span
                     :if={@recording_state == :recording}
                     data-audio-level
                     class="tl-audio-level inline-block w-2 h-6 rounded-full bg-error/30"
                   >
                   </span>
+
+                  <%!-- Recording timer --%>
                   <span
                     :if={@recording_state == :recording}
                     data-recording-timer
@@ -390,6 +443,7 @@ defmodule TalesLife2Web.InterviewLive.Show do
                     0:00
                   </span>
 
+                  <%!-- Record / Stop / Transcribing button --%>
                   <button
                     type="button"
                     id="record-button"
@@ -398,11 +452,11 @@ defmodule TalesLife2Web.InterviewLive.Show do
                     disabled={@recording_state == :transcribing}
                     class={[
                       "tl-record-btn inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
-                      recording_button_classes(@recording_state)
+                      recording_button_classes(@recording_state, @response_empty)
                     ]}
                   >
                     <span
-                      :if={@recording_state == :idle}
+                      :if={@recording_state in [:idle, :transcription_error]}
                       class="inline-flex items-center gap-2"
                     >
                       <.icon name="hero-microphone" class="size-5" />
@@ -420,10 +474,30 @@ defmodule TalesLife2Web.InterviewLive.Show do
                       class="inline-flex items-center gap-2"
                     >
                       <span class="tl-spinner"></span>
-                      <span>Transcribing…</span>
+                      <span>Converting your words to text…</span>
                     </span>
                   </button>
                 </div>
+              </div>
+
+              <%!-- Inline transcription error with retry --%>
+              <div
+                :if={@recording_state == :transcription_error}
+                class="mt-3 flex items-center gap-3 p-3 rounded-lg bg-error/5 border border-error/20"
+                id="transcription-error"
+              >
+                <.icon name="hero-exclamation-triangle" class="size-5 text-error shrink-0" />
+                <p class="text-sm text-error flex-1">
+                  {@transcription_error_message}
+                </p>
+                <button
+                  type="button"
+                  id="retry-recording-button"
+                  phx-click="retry_recording"
+                  class="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium bg-error/10 text-error hover:bg-error/20 transition-colors"
+                >
+                  <.icon name="hero-arrow-path" class="size-4" /> Try Again
+                </button>
               </div>
             </.form>
 

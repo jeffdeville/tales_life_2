@@ -271,7 +271,7 @@ defmodule TalesLife2Web.InterviewLiveTest do
       assert html =~ "I remember This is a test transcription with some filler words."
     end
 
-    test "handles transcription error", %{conn: conn, interview: interview} do
+    test "handles transcription error with inline retry", %{conn: conn, interview: interview} do
       {:ok, view, _html} = live(conn, ~p"/interviews/#{interview}")
 
       # TestProvider returns error when audio starts with "error"
@@ -281,9 +281,29 @@ defmodule TalesLife2Web.InterviewLiveTest do
       Process.sleep(50)
       html = render(view)
       assert html =~ "Transcription failed"
+      assert has_element?(view, "#transcription-error")
+      assert has_element?(view, "#retry-recording-button")
     end
 
-    test "handles invalid base64 audio", %{conn: conn, interview: interview} do
+    test "retry button resets to idle state", %{conn: conn, interview: interview} do
+      {:ok, view, _html} = live(conn, ~p"/interviews/#{interview}")
+
+      # Trigger a transcription error
+      audio_base64 = Base.encode64("error_audio")
+      render_hook(view, "audio_recorded", %{"audio" => audio_base64})
+      Process.sleep(50)
+
+      assert has_element?(view, "#transcription-error")
+
+      # Click retry
+      html = view |> element("#retry-recording-button") |> render_click()
+
+      refute html =~ "Transcription failed"
+      refute has_element?(view, "#transcription-error")
+      assert has_element?(view, "#record-button[aria-label='Start voice recording']")
+    end
+
+    test "handles invalid base64 audio with inline error", %{conn: conn, interview: interview} do
       {:ok, view, _html} = live(conn, ~p"/interviews/#{interview}")
 
       render_hook(view, "audio_recorded", %{"audio" => "not-valid-base64!!!"})
@@ -291,6 +311,7 @@ defmodule TalesLife2Web.InterviewLiveTest do
       Process.sleep(50)
       html = render(view)
       assert html =~ "Invalid audio data"
+      assert has_element?(view, "#retry-recording-button")
     end
 
     test "handles recording_started event", %{conn: conn, interview: interview} do
@@ -306,6 +327,37 @@ defmodule TalesLife2Web.InterviewLiveTest do
 
       html = render_hook(view, "audio_error", %{"error" => "Microphone permission denied"})
       assert html =~ "Microphone permission denied"
+    end
+
+    test "shows voice prompt for empty responses", %{conn: conn, interview: interview} do
+      {:ok, view, _html} = live(conn, ~p"/interviews/#{interview}")
+
+      # On first load with no response, voice prompt should be visible
+      assert has_element?(view, "#voice-prompt")
+      html = render(view)
+      assert html =~ "Tap to speak your answer"
+      assert html =~ "Or type your response below"
+    end
+
+    test "hides voice prompt when response exists", %{conn: conn, interview: interview} do
+      {:ok, view, _html} = live(conn, ~p"/interviews/#{interview}")
+
+      # Type a response
+      view
+      |> form("#response-form", response: %{text_content: "I remember the garden."})
+      |> render_submit()
+
+      html = render(view)
+      refute has_element?(view, "#voice-prompt")
+      refute html =~ "Tap to speak your answer"
+    end
+
+    test "shows transcribing state with converting message", %{conn: conn, interview: interview} do
+      {:ok, view, _html} = live(conn, ~p"/interviews/#{interview}")
+
+      html = render_hook(view, "audio_recorded", %{"audio" => Base.encode64("test audio data")})
+
+      assert html =~ "Converting your words to text"
     end
   end
 end
