@@ -93,10 +93,31 @@ defmodule TalesLife2.Interviews do
       |> where([r], r.interview_id == ^interview.id)
       |> Repo.aggregate(:count)
 
-    total =
-      TalesLife2.Content.Question
-      |> Repo.aggregate(:count)
+    questions_query = questions_for_interview_query(interview)
+    total = Repo.aggregate(questions_query, :count)
 
     %{total_questions: total, answered_questions: answered}
+  end
+
+  @doc """
+  Returns the ordered list of questions for an interview,
+  filtered by the interview's selected eras (or all if none selected).
+  """
+  def list_questions_for_interview(%Interview{} = interview) do
+    interview
+    |> questions_for_interview_query()
+    |> Repo.all()
+  end
+
+  defp questions_for_interview_query(%Interview{selected_eras: eras}) do
+    alias TalesLife2.Content.Question
+
+    query = from(q in Question, order_by: [q.era, q.category, q.position])
+
+    if eras == [] do
+      query
+    else
+      where(query, [q], q.era in ^eras)
+    end
   end
 end
