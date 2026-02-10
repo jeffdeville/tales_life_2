@@ -2,6 +2,7 @@ defmodule TalesLife2Web.StoryLive.Show do
   use TalesLife2Web, :live_view
 
   alias TalesLife2.Interviews
+  alias TalesLife2.Sharing
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
@@ -22,9 +23,28 @@ defmodule TalesLife2Web.StoryLive.Show do
         |> assign(:interview, interview)
         |> assign(:grouped_responses, grouped_responses)
         |> assign(:progress, progress)
+        |> assign(:share_url, nil)
 
       {:ok, socket}
     end
+  end
+
+  @impl true
+  def handle_event("generate_share_link", _params, socket) do
+    interview = socket.assigns.interview
+
+    case Sharing.create_shared_link(interview) do
+      {:ok, shared_link} ->
+        share_url = url(~p"/shared/#{shared_link.token}")
+        {:noreply, assign(socket, :share_url, share_url)}
+
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, "Could not generate share link.")}
+    end
+  end
+
+  def handle_event("close_share_modal", _params, socket) do
+    {:noreply, assign(socket, :share_url, nil)}
   end
 
   defp group_responses_by_era_and_category(responses) do
@@ -119,11 +139,55 @@ defmodule TalesLife2Web.StoryLive.Show do
               :if={@interview.status == "completed"}
               class="inline-flex items-center gap-2 px-4 py-2 bg-base-200 text-base-content rounded-lg text-sm font-medium hover:bg-base-300 transition-colors"
               id="btn-share"
-              disabled
-              title="Sharing coming soon"
+              phx-click="generate_share_link"
             >
               <.icon name="hero-share" class="size-4" /> Share
             </button>
+          </div>
+        </div>
+
+        <%!-- Share modal --%>
+        <div
+          :if={@share_url}
+          class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          id="share-modal"
+          phx-click="close_share_modal"
+        >
+          <div
+            class="bg-base-100 rounded-xl shadow-xl p-6 max-w-md w-full mx-4"
+            phx-click-away="close_share_modal"
+            id="share-modal-content"
+          >
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-lg font-bold">Share this story</h2>
+              <button
+                phx-click="close_share_modal"
+                class="text-base-content/50 hover:text-base-content"
+                id="btn-close-share"
+              >
+                <.icon name="hero-x-mark" class="size-5" />
+              </button>
+            </div>
+            <p class="text-sm text-base-content/60 mb-4">
+              Anyone with this link can read {@interview.subject_name}'s stories without signing in.
+            </p>
+            <div class="flex items-center gap-2">
+              <input
+                type="text"
+                value={@share_url}
+                readonly
+                class="flex-1 px-3 py-2 border border-base-300 rounded-lg text-sm bg-base-200 select-all"
+                id="share-url-input"
+              />
+              <button
+                id="btn-copy-link"
+                phx-hook="CopyToClipboard"
+                data-clipboard-text={@share_url}
+                class="px-4 py-2 bg-primary text-primary-content rounded-lg text-sm font-medium hover:opacity-90 transition-opacity whitespace-nowrap"
+              >
+                Copy Link
+              </button>
+            </div>
           </div>
         </div>
 
