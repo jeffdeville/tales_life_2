@@ -29,6 +29,9 @@ config :tales_life_2, TalesLife2.Mailer, adapter: Swoosh.Adapters.Test
 # Disable swoosh api client as it is only required for production adapters
 config :swoosh, :api_client, false
 
+# Use test provider for transcription
+config :tales_life_2, :transcription_provider, TalesLife2.Transcription.TestProvider
+
 # Print only warnings and errors during test
 config :logger, level: :warning
 

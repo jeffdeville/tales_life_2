@@ -20,6 +20,10 @@ if System.get_env("PHX_SERVER") do
   config :tales_life_2, TalesLife2Web.Endpoint, server: true
 end
 
+if deepgram_api_key = System.get_env("DEEPGRAM_API_KEY") do
+  config :tales_life_2, :deepgram_api_key, deepgram_api_key
+end
+
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||
