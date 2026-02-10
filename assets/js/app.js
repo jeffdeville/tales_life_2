@@ -24,6 +24,7 @@ import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/tales_life_2"
 import topbar from "../vendor/topbar"
+import AudioRecorder from "./hooks/audio_recorder"
 
 const CopyToClipboard = {
   mounted() {
@@ -44,7 +45,7 @@ const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {...colocatedHooks, CopyToClipboard},
+  hooks: {...colocatedHooks, CopyToClipboard, AudioRecorder},
 })
 
 // Show progress bar on live navigation and form submits
