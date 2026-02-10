@@ -22,10 +22,19 @@ mix test --failed               # Re-run only previously failed tests
 ## Pre-commit
 
 ```bash
-mix precommit   # Runs: compile --warnings-as-errors, deps.unlock --unused, format, test
+mix precommit   # Runs: compile --warnings-as-errors, deps.unlock --unused, format, credo --strict, test
 ```
 
-Always run `mix precommit` before committing. Fix all warnings and test failures.
+Always run `mix precommit` before committing. Fix all warnings, Credo issues, and test failures.
+
+## Linting
+
+```bash
+mix credo                  # Run Credo linter
+mix credo --strict         # Strict mode (used in precommit)
+```
+
+Credo is configured in `.credo.exs`. Key settings: max nesting depth of 3, max line length of 120, alias usage required for nested modules (depth > 2).
 
 ## Code Formatting
 

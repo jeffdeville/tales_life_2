@@ -35,3 +35,6 @@ tales_life_2-*.tar
 npm-debug.log
 /assets/node_modules/
 
+# Local lefthook overrides (per-worktree)
+lefthook-local.yml
+
