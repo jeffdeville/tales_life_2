@@ -218,32 +218,33 @@ defmodule TalesLife2Web.UserAuth do
   defp maybe_store_return_to(conn), do: conn
 
   @doc """
-  LiveView on_mount hook that assigns current_scope from the session token.
-  Used in live_session to make current_scope available to LiveViews.
+  LiveView on_mount callback that ensures the user is authenticated.
+
+  Used in live_session to assign current_scope and ensure authentication.
   """
-  def on_mount(:require_authenticated_user, _params, session, socket) do
-    socket = mount_current_scope(socket, session)
+  def on_mount(:ensure_authenticated, _params, session, socket) do
+    socket = mount_current_scope(session, socket)
 
     if socket.assigns.current_scope && socket.assigns.current_scope.user do
       {:cont, socket}
     else
-      {:halt, Phoenix.LiveView.redirect(socket, to: ~p"/users/log-in")}
+      socket =
+        socket
+        |> Phoenix.LiveView.put_flash(:error, "You must log in to access this page.")
+        |> Phoenix.LiveView.redirect(to: ~p"/users/log-in")
+
+      {:halt, socket}
     end
   end
 
-  defp mount_current_scope(socket, session) do
-    case session do
-      %{"user_token" => user_token} ->
+  defp mount_current_scope(session, socket) do
+    Phoenix.Component.assign_new(socket, :current_scope, fn ->
+      if user_token = session["user_token"] do
         case Accounts.get_user_by_session_token(user_token) do
-          {user, _token_inserted_at} ->
-            Phoenix.Component.assign(socket, :current_scope, Scope.for_user(user))
-
-          nil ->
-            Phoenix.Component.assign(socket, :current_scope, Scope.for_user(nil))
+          {user, _token_inserted_at} -> Scope.for_user(user)
+          nil -> nil
         end
-
-      _ ->
-        Phoenix.Component.assign(socket, :current_scope, Scope.for_user(nil))
-    end
+      end
+    end)
   end
 end

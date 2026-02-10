@@ -45,6 +45,18 @@ defmodule TalesLife2Web.Router do
     end
   end
 
+  ## Authenticated LiveView routes
+
+  scope "/", TalesLife2Web do
+    pipe_through [:browser, :require_authenticated_user]
+
+    live_session :authenticated, on_mount: [{TalesLife2Web.UserAuth, :ensure_authenticated}] do
+      live "/questions", QuestionBrowseLive
+      live "/interviews/new", InterviewLive.New
+      live "/interviews/:id", InterviewLive.Show
+    end
+  end
+
   ## Authentication routes
 
   scope "/", TalesLife2Web do
@@ -56,12 +68,6 @@ defmodule TalesLife2Web.Router do
 
   scope "/", TalesLife2Web do
     pipe_through [:browser, :require_authenticated_user]
-
-    live_session :authenticated,
-      on_mount: [{TalesLife2Web.UserAuth, :require_authenticated_user}] do
-      live "/interviews/new", InterviewLive.New
-      live "/interviews/:id", InterviewLive.Show
-    end
 
     get "/users/settings", UserSettingsController, :edit
     put "/users/settings", UserSettingsController, :update
