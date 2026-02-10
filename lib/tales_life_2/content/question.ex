@@ -1,4 +1,5 @@
 defmodule TalesLife2.Content.Question do
+  @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
 

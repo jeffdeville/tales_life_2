@@ -1,4 +1,5 @@
 defmodule TalesLife2.Sharing.SharedLink do
+  @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
 

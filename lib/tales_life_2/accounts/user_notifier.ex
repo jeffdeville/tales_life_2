@@ -1,8 +1,9 @@
 defmodule TalesLife2.Accounts.UserNotifier do
+  @moduledoc false
   import Swoosh.Email
 
-  alias TalesLife2.Mailer
   alias TalesLife2.Accounts.User
+  alias TalesLife2.Mailer
 
   # Delivers the email using the application mailer.
   defp deliver(recipient, subject, body) do

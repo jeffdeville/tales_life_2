@@ -2,8 +2,8 @@ defmodule TalesLife2.TranscriptionTest do
   use ExUnit.Case, async: true
 
   alias TalesLife2.Transcription
-  alias TalesLife2.Transcription.TextCleanup
   alias TalesLife2.Transcription.TestProvider
+  alias TalesLife2.Transcription.TextCleanup
 
   describe "transcribe/2" do
     test "returns cleaned text with test provider" do

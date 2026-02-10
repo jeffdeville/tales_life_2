@@ -4,8 +4,8 @@ defmodule TalesLife2.Content do
   """
 
   import Ecto.Query
-  alias TalesLife2.Repo
   alias TalesLife2.Content.Question
+  alias TalesLife2.Repo
 
   @doc """
   Returns all questions ordered by era and position.

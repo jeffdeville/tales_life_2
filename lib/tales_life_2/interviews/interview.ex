@@ -1,4 +1,5 @@
 defmodule TalesLife2.Interviews.Interview do
+  @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
 

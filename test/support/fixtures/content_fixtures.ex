@@ -3,8 +3,8 @@ defmodule TalesLife2.ContentFixtures do
   Test helpers for creating Content entities.
   """
 
-  alias TalesLife2.Repo
   alias TalesLife2.Content.Question
+  alias TalesLife2.Repo
 
   def question_fixture(attrs \\ %{}) do
     attrs =

@@ -1,4 +1,5 @@
 defmodule TalesLife2Web.UserAuth do
+  @moduledoc false
   use TalesLife2Web, :verified_routes
 
   import Plug.Conn

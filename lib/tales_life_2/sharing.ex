@@ -3,9 +3,9 @@ defmodule TalesLife2.Sharing do
   The Sharing context manages shareable links to interviews.
   """
 
+  alias TalesLife2.Interviews.Interview
   alias TalesLife2.Repo
   alias TalesLife2.Sharing.SharedLink
-  alias TalesLife2.Interviews.Interview
 
   @doc """
   Creates a shared link for the given interview.
