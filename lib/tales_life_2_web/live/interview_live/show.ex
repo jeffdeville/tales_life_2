@@ -369,44 +369,61 @@ defmodule TalesLife2Web.InterviewLive.Show do
                 phx-debounce="500"
               />
 
-              <div class="flex items-center justify-between mt-2">
+              <div class="flex items-center justify-between mt-2" data-recording-container>
                 <p class="text-xs text-base-content/40">
                   Responses are saved automatically as you type.
                 </p>
 
-                <button
-                  type="button"
-                  id="record-button"
-                  phx-hook="AudioRecorder"
-                  aria-label={recording_aria_label(@recording_state)}
-                  disabled={@recording_state == :transcribing}
-                  class={[
-                    "tl-record-btn inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
-                    recording_button_classes(@recording_state)
-                  ]}
-                >
+                <div class="inline-flex items-center gap-2">
                   <span
-                    :if={@recording_state == :idle}
-                    class="inline-flex items-center gap-2"
+                    :if={@recording_state == :recording}
+                    data-audio-level
+                    class="tl-audio-level inline-block w-2 h-6 rounded-full bg-error/30"
                   >
-                    <.icon name="hero-microphone" class="size-5" />
-                    <span>Record</span>
                   </span>
                   <span
                     :if={@recording_state == :recording}
-                    class="inline-flex items-center gap-2"
+                    data-recording-timer
+                    id="recording-timer"
+                    class="text-xs tabular-nums text-error font-medium"
                   >
-                    <span class="tl-recording-dot"></span>
-                    <span>Stop</span>
+                    0:00
                   </span>
-                  <span
-                    :if={@recording_state == :transcribing}
-                    class="inline-flex items-center gap-2"
+
+                  <button
+                    type="button"
+                    id="record-button"
+                    phx-hook="AudioRecorder"
+                    aria-label={recording_aria_label(@recording_state)}
+                    disabled={@recording_state == :transcribing}
+                    class={[
+                      "tl-record-btn inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
+                      recording_button_classes(@recording_state)
+                    ]}
                   >
-                    <span class="tl-spinner"></span>
-                    <span>Transcribing…</span>
-                  </span>
-                </button>
+                    <span
+                      :if={@recording_state == :idle}
+                      class="inline-flex items-center gap-2"
+                    >
+                      <.icon name="hero-microphone" class="size-5" />
+                      <span>Record</span>
+                    </span>
+                    <span
+                      :if={@recording_state == :recording}
+                      class="inline-flex items-center gap-2"
+                    >
+                      <span class="tl-recording-dot"></span>
+                      <span>Stop</span>
+                    </span>
+                    <span
+                      :if={@recording_state == :transcribing}
+                      class="inline-flex items-center gap-2"
+                    >
+                      <span class="tl-spinner"></span>
+                      <span>Transcribing…</span>
+                    </span>
+                  </button>
+                </div>
               </div>
             </.form>
 

@@ -232,6 +232,14 @@ body {
   to { transform: rotate(360deg); }
 }
 
+/* Audio level indicator — height scales with --audio-level (0-100) */
+.tl-audio-level {
+  transition: height 0.1s ease-out;
+  height: calc(6px + var(--audio-level, 0) * 0.18px);
+  min-height: 6px;
+  max-height: 24px;
+}
+
 /* Touch-friendly tap targets on touch devices */
 @media (pointer: coarse) {
   .btn, button, a[href] {
