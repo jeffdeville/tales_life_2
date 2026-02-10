@@ -4,9 +4,8 @@ defmodule TalesLife2.Accounts do
   """
 
   import Ecto.Query, warn: false
+  alias TalesLife2.Accounts.{User, UserNotifier, UserToken}
   alias TalesLife2.Repo
-
-  alias TalesLife2.Accounts.{User, UserToken, UserNotifier}
 
   ## Database getters
 

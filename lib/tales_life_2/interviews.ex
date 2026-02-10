@@ -4,9 +4,9 @@ defmodule TalesLife2.Interviews do
   """
 
   import Ecto.Query
-  alias TalesLife2.Repo
   alias TalesLife2.Accounts.Scope
   alias TalesLife2.Interviews.{Interview, Response}
+  alias TalesLife2.Repo
 
   @doc """
   Creates an interview for the given scope's user.
