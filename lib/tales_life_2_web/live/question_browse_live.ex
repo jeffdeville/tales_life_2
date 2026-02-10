@@ -10,9 +10,9 @@ defmodule TalesLife2Web.QuestionBrowseLive do
         "Childhood memories, family stories, school days, and the experiences that shaped who you became.",
       icon: "hero-sun",
       bg_class: "bg-amber-50",
-      border_class: "border-amber-200",
-      accent_class: "text-amber-800",
-      badge_class: "bg-amber-100 text-amber-700"
+      border_class: "border-amber-200/70",
+      accent_class: "text-amber-900",
+      badge_class: "bg-amber-100 text-amber-800"
     },
     "mid_life" => %{
       title: "Mid Life",
@@ -20,19 +20,19 @@ defmodule TalesLife2Web.QuestionBrowseLive do
         "Career journeys, love and relationships, parenting, challenges overcome, and life's turning points.",
       icon: "hero-heart",
       bg_class: "bg-rose-50",
-      border_class: "border-rose-200",
-      accent_class: "text-rose-800",
-      badge_class: "bg-rose-100 text-rose-700"
+      border_class: "border-rose-200/70",
+      accent_class: "text-rose-900",
+      badge_class: "bg-rose-100 text-rose-800"
     },
     "later_life" => %{
       title: "Later Life and Reflections",
       description:
         "Hard-won wisdom, life reflections, legacy and meaning, advice for future generations.",
       icon: "hero-star",
-      bg_class: "bg-violet-50",
-      border_class: "border-violet-200",
-      accent_class: "text-violet-800",
-      badge_class: "bg-violet-100 text-violet-700"
+      bg_class: "bg-stone-50",
+      border_class: "border-stone-300/70",
+      accent_class: "text-stone-800",
+      badge_class: "bg-stone-100 text-stone-700"
     }
   }
 
@@ -91,10 +91,13 @@ defmodule TalesLife2Web.QuestionBrowseLive do
     <Layouts.app flash={@flash} current_scope={@current_scope}>
       <div class="space-y-6">
         <div class="text-center mb-8">
-          <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">
+          <h1
+            class="text-3xl font-bold tracking-tight sm:text-4xl"
+            style="font-family: var(--tl-font-serif);"
+          >
             Interview Questions
           </h1>
-          <p class="mt-3 text-lg text-base-content/70">
+          <p class="mt-3 text-lg text-base-content/70 leading-relaxed">
             Explore questions organized by life era to guide meaningful conversations.
           </p>
         </div>

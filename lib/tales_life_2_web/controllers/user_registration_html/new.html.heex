@@ -1,11 +1,12 @@
 <Layouts.app flash={@flash} current_scope={@current_scope}>
   <div class="mx-auto max-w-sm">
-    <div class="text-center">
+    <div class="text-center mb-8">
+      <p class="text-4xl mb-4" aria-hidden="true">&#x1f4d6;</p>
       <.header>
-        Register for an account
+        Create Your Account
         <:subtitle>
           Already registered?
-          <.link navigate={~p"/users/log-in"} class="font-semibold text-brand hover:underline">
+          <.link navigate={~p"/users/log-in"} class="font-semibold text-primary hover:underline">
             Log in
           </.link>
           to your account now.
@@ -13,19 +14,24 @@
       </.header>
     </div>
 
-    <.form :let={f} for={@changeset} action={~p"/users/register"}>
-      <.input
-        field={f[:email]}
-        type="email"
-        label="Email"
-        autocomplete="email"
-        required
-        phx-mounted={JS.focus()}
-      />
+    <div class="bg-base-100 rounded-xl p-6 shadow-sm border border-base-300/50">
+      <.form :let={f} for={@changeset} action={~p"/users/register"}>
+        <.input
+          field={f[:email]}
+          type="email"
+          label="Email"
+          autocomplete="email"
+          required
+          phx-mounted={JS.focus()}
+        />
 
-      <.button phx-disable-with="Creating account..." class="btn btn-primary w-full">
-        Create an account
-      </.button>
-    </.form>
+        <.button
+          phx-disable-with="Creating account..."
+          class="btn btn-primary w-full rounded-lg mt-2"
+        >
+          Create an account
+        </.button>
+      </.form>
+    </div>
   </div>
 </Layouts.app>

@@ -74,11 +74,13 @@ defmodule TalesLife2Web.SharedStoryLive do
     <Layouts.app flash={@flash}>
       <div class="max-w-2xl mx-auto" id="shared-story">
         <%!-- Story header --%>
-        <div class="mb-8 pb-6 border-b border-base-300" id="shared-story-header">
+        <div class="mb-8 pb-6 border-b border-base-300/60" id="shared-story-header">
           <p class="text-xs uppercase tracking-widest text-base-content/40 mb-2">
             Shared via TalesLife
           </p>
-          <h1 class="text-3xl font-bold mb-1">{@interview.subject_name}</h1>
+          <h1 class="text-3xl font-bold mb-1" style="font-family: var(--tl-font-serif);">
+            {@interview.subject_name}
+          </h1>
           <p class="text-base-content/50 text-sm">
             Interview recorded {format_date(@interview.inserted_at)}
           </p>
@@ -93,7 +95,10 @@ defmodule TalesLife2Web.SharedStoryLive do
           <div class="space-y-10" id="shared-story-content">
             <section :for={{era, categories} <- @grouped_responses} id={"shared-era-#{era}"}>
               <div class="mb-6">
-                <h2 class="text-2xl font-bold tracking-tight border-b-2 border-primary/20 pb-2">
+                <h2
+                  class="text-2xl font-bold tracking-tight border-b-2 border-primary/20 pb-2"
+                  style="font-family: var(--tl-font-serif);"
+                >
                   {era_label(era)}
                 </h2>
               </div>
@@ -110,7 +115,7 @@ defmodule TalesLife2Web.SharedStoryLive do
                   <div class="space-y-6">
                     <article
                       :for={response <- responses}
-                      class="pl-4 border-l-2 border-base-300"
+                      class="pl-5 border-l-2 border-primary/30"
                       id={"shared-response-#{response.id}"}
                     >
                       <p class="text-sm font-medium text-base-content/60 italic mb-2">
@@ -128,7 +133,7 @@ defmodule TalesLife2Web.SharedStoryLive do
         <% end %>
 
         <%!-- CTA footer --%>
-        <div class="mt-12 pt-8 border-t border-base-300 text-center" id="shared-cta">
+        <div class="mt-12 pt-8 border-t border-base-300/60 text-center" id="shared-cta">
           <p class="text-sm text-base-content/50 mb-3">
             Preserve your family's stories for generations to come.
           </p>

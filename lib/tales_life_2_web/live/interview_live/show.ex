@@ -202,9 +202,9 @@ defmodule TalesLife2Web.InterviewLive.Show do
     <Layouts.app flash={@flash} current_scope={@current_scope}>
       <div class="max-w-2xl mx-auto" id="interview-show">
         <%!-- Header with subject name and progress --%>
-        <div class="mb-6">
-          <div class="flex items-center justify-between mb-2">
-            <h1 class="text-xl font-bold">
+        <div class="mb-8">
+          <div class="flex items-center justify-between mb-3">
+            <h1 class="text-xl font-bold" style="font-family: var(--tl-font-serif);">
               Interview with {@interview.subject_name}
             </h1>
             <span class="text-sm text-base-content/60" id="progress-text">
@@ -213,9 +213,9 @@ defmodule TalesLife2Web.InterviewLive.Show do
           </div>
 
           <%!-- Progress bar --%>
-          <div class="w-full bg-base-300 rounded-full h-2" id="progress-bar">
+          <div class="w-full bg-base-300/60 rounded-full h-2.5" id="progress-bar">
             <div
-              class="bg-primary h-2 rounded-full transition-all duration-300"
+              class="bg-primary h-2.5 rounded-full transition-all duration-300"
               style={"width: #{progress_percent(@progress)}%"}
             >
             </div>
@@ -225,18 +225,20 @@ defmodule TalesLife2Web.InterviewLive.Show do
         <%= if @interview.status == "completed" do %>
           <div class="text-center py-12">
             <.icon name="hero-check-circle" class="size-16 text-success mx-auto mb-4" />
-            <h2 class="text-2xl font-bold mb-2">Interview Complete</h2>
-            <p class="text-base-content/70 mb-6">
+            <h2 class="text-2xl font-bold mb-2" style="font-family: var(--tl-font-serif);">
+              Interview Complete
+            </h2>
+            <p class="text-base-content/70 mb-6 leading-relaxed">
               You've captured {@progress.answered_questions} responses.
               These stories are now saved.
             </p>
-            <.button navigate={~p"/"}>Back to Home</.button>
+            <.button navigate={~p"/stories"}>View My Stories</.button>
           </div>
         <% else %>
           <%= if @question do %>
             <%!-- Era and category indicator --%>
             <div class="flex items-center gap-2 mb-4 text-sm text-base-content/50" id="question-meta">
-              <span class="px-2 py-0.5 bg-base-200 rounded">{era_label(@question.era)}</span>
+              <span class="px-2 py-0.5 bg-base-200 rounded-md">{era_label(@question.era)}</span>
               <span>&middot;</span>
               <span class="capitalize">{@question.category}</span>
               <span class="ml-auto">
@@ -245,11 +247,17 @@ defmodule TalesLife2Web.InterviewLive.Show do
             </div>
 
             <%!-- Question display --%>
-            <div class="mb-6" id={"question-#{@question.id}"}>
-              <p class="text-2xl leading-relaxed font-medium mb-2">
+            <div
+              class="mb-6 bg-base-100 rounded-xl p-6 border border-base-300/50 shadow-sm"
+              id={"question-#{@question.id}"}
+            >
+              <p
+                class="text-2xl leading-relaxed font-medium mb-2"
+                style="font-family: var(--tl-font-serif);"
+              >
                 {@question.prompt_text}
               </p>
-              <p :if={@question.interviewing_tip} class="text-sm text-base-content/50 italic">
+              <p :if={@question.interviewing_tip} class="text-sm text-base-content/50 italic mt-3">
                 <.icon name="hero-light-bulb" class="size-4 inline mr-1" />
                 {@question.interviewing_tip}
               </p>
@@ -267,7 +275,7 @@ defmodule TalesLife2Web.InterviewLive.Show do
                 type="textarea"
                 placeholder="Take your time — there are no wrong answers..."
                 rows="6"
-                class="w-full textarea textarea-bordered text-base"
+                class="w-full textarea textarea-bordered text-base leading-relaxed"
                 phx-debounce="500"
               />
 
@@ -283,7 +291,7 @@ defmodule TalesLife2Web.InterviewLive.Show do
                 phx-value-direction="previous"
                 disabled={@current_index == 0}
                 class={[
-                  "btn btn-ghost",
+                  "btn btn-ghost rounded-lg",
                   @current_index == 0 && "btn-disabled"
                 ]}
                 id="btn-previous"
@@ -296,7 +304,7 @@ defmodule TalesLife2Web.InterviewLive.Show do
                 phx-value-direction="skip"
                 disabled={@current_index >= @total - 1}
                 class={[
-                  "btn btn-ghost text-base-content/60",
+                  "btn btn-ghost text-base-content/60 rounded-lg",
                   @current_index >= @total - 1 && "btn-disabled"
                 ]}
                 id="btn-skip"
@@ -307,7 +315,7 @@ defmodule TalesLife2Web.InterviewLive.Show do
               <%= if @current_index >= @total - 1 do %>
                 <button
                   phx-click="complete_interview"
-                  class="btn btn-primary"
+                  class="btn btn-primary rounded-lg"
                   id="btn-complete"
                   data-confirm="Are you sure you want to finish this interview? You can always come back to add more."
                 >
@@ -317,7 +325,7 @@ defmodule TalesLife2Web.InterviewLive.Show do
                 <button
                   phx-click="navigate"
                   phx-value-direction="next"
-                  class="btn btn-primary"
+                  class="btn btn-primary rounded-lg"
                   id="btn-next"
                 >
                   Next <.icon name="hero-arrow-right" class="size-4" />
@@ -326,7 +334,10 @@ defmodule TalesLife2Web.InterviewLive.Show do
             </div>
 
             <%!-- Encouraging micro-copy --%>
-            <div class="text-center mt-8 text-sm text-base-content/40">
+            <div
+              class="text-center mt-10 text-sm text-base-content/40 italic"
+              style="font-family: var(--tl-font-serif);"
+            >
               <p>Every story matters. Take your time.</p>
             </div>
           <% else %>

@@ -104,8 +104,10 @@ defmodule TalesLife2Web.StoryLive.Show do
         </.link>
 
         <%!-- Story header --%>
-        <div class="mb-8 pb-6 border-b border-base-300" id="story-header">
-          <h1 class="text-3xl font-bold mb-1">{@interview.subject_name}</h1>
+        <div class="mb-8 pb-6 border-b border-base-300/60" id="story-header">
+          <h1 class="text-3xl font-bold mb-1" style="font-family: var(--tl-font-serif);">
+            {@interview.subject_name}
+          </h1>
           <p class="text-base-content/50 text-sm mb-4">
             Interview started {format_date(@interview.inserted_at)}
           </p>
@@ -159,7 +161,9 @@ defmodule TalesLife2Web.StoryLive.Show do
             id="share-modal-content"
           >
             <div class="flex items-center justify-between mb-4">
-              <h2 class="text-lg font-bold">Share this story</h2>
+              <h2 class="text-lg font-bold" style="font-family: var(--tl-font-serif);">
+                Share this story
+              </h2>
               <button
                 phx-click="close_share_modal"
                 class="text-base-content/50 hover:text-base-content"
@@ -211,7 +215,10 @@ defmodule TalesLife2Web.StoryLive.Show do
             <section :for={{era, categories} <- @grouped_responses} id={"era-#{era}"}>
               <%!-- Era header --%>
               <div class="mb-6">
-                <h2 class="text-2xl font-bold tracking-tight border-b-2 border-primary/20 pb-2">
+                <h2
+                  class="text-2xl font-bold tracking-tight border-b-2 border-primary/20 pb-2"
+                  style="font-family: var(--tl-font-serif);"
+                >
                   {era_label(era)}
                 </h2>
               </div>
@@ -227,7 +234,7 @@ defmodule TalesLife2Web.StoryLive.Show do
                   <div class="space-y-6">
                     <article
                       :for={response <- responses}
-                      class="pl-4 border-l-2 border-base-300"
+                      class="pl-5 border-l-2 border-primary/30"
                       id={"response-#{response.id}"}
                     >
                       <p class="text-sm font-medium text-base-content/60 italic mb-2">

@@ -1,40 +1,44 @@
 <Layouts.app flash={@flash} current_scope={@current_scope}>
-  <div class="text-center">
+  <div class="text-center mb-6">
     <.header>
       Account Settings
       <:subtitle>Manage your account email address and password settings</:subtitle>
     </.header>
   </div>
 
-  <.form :let={f} for={@email_changeset} action={~p"/users/settings"} id="update_email">
-    <input type="hidden" name="action" value="update_email" />
+  <div class="bg-base-100 rounded-xl p-6 shadow-sm border border-base-300/50 max-w-lg mx-auto">
+    <.form :let={f} for={@email_changeset} action={~p"/users/settings"} id="update_email">
+      <input type="hidden" name="action" value="update_email" />
 
-    <.input field={f[:email]} type="email" label="Email" autocomplete="email" required />
+      <.input field={f[:email]} type="email" label="Email" autocomplete="email" required />
 
-    <.button variant="primary" phx-disable-with="Changing...">Change Email</.button>
-  </.form>
+      <.button variant="primary" phx-disable-with="Changing..." class="rounded-lg">
+        Change Email
+      </.button>
+    </.form>
 
-  <div class="divider" />
+    <div class="divider my-6" />
 
-  <.form :let={f} for={@password_changeset} action={~p"/users/settings"} id="update_password">
-    <input type="hidden" name="action" value="update_password" />
+    <.form :let={f} for={@password_changeset} action={~p"/users/settings"} id="update_password">
+      <input type="hidden" name="action" value="update_password" />
 
-    <.input
-      field={f[:password]}
-      type="password"
-      label="New password"
-      autocomplete="new-password"
-      required
-    />
-    <.input
-      field={f[:password_confirmation]}
-      type="password"
-      label="Confirm new password"
-      autocomplete="new-password"
-      required
-    />
-    <.button variant="primary" phx-disable-with="Changing...">
-      Save Password
-    </.button>
-  </.form>
+      <.input
+        field={f[:password]}
+        type="password"
+        label="New password"
+        autocomplete="new-password"
+        required
+      />
+      <.input
+        field={f[:password_confirmation]}
+        type="password"
+        label="Confirm new password"
+        autocomplete="new-password"
+        required
+      />
+      <.button variant="primary" phx-disable-with="Changing..." class="rounded-lg">
+        Save Password
+      </.button>
+    </.form>
+  </div>
 </Layouts.app>
