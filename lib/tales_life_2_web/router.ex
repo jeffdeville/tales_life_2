@@ -52,6 +52,8 @@ defmodule TalesLife2Web.Router do
 
     live_session :authenticated, on_mount: [{TalesLife2Web.UserAuth, :ensure_authenticated}] do
       live "/questions", QuestionBrowseLive
+      live "/interviews/new", InterviewLive.New
+      live "/interviews/:id", InterviewLive.Show
     end
   end
 
