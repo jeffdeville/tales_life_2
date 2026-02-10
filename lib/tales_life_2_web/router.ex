@@ -54,6 +54,8 @@ defmodule TalesLife2Web.Router do
       live "/questions", QuestionBrowseLive
       live "/interviews/new", InterviewLive.New
       live "/interviews/:id", InterviewLive.Show
+      live "/stories", StoryLibraryLive
+      live "/stories/:id", StoryLive.Show
     end
   end
 
