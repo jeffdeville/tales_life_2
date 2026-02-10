@@ -7,6 +7,19 @@
 # General application configuration
 import Config
 
+config :tales_life_2, :scopes,
+  user: [
+    default: true,
+    module: TalesLife2.Accounts.Scope,
+    assign_key: :current_scope,
+    access_path: [:user, :id],
+    schema_key: :user_id,
+    schema_type: :id,
+    schema_table: :users,
+    test_data_fixture: TalesLife2.AccountsFixtures,
+    test_setup_helper: :register_and_log_in_user
+  ]
+
 config :tales_life_2,
   ecto_repos: [TalesLife2.Repo],
   generators: [timestamp_type: :utc_datetime]
